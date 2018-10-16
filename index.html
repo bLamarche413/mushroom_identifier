@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.0/stitch.js"></script>
+    <script>
+    // Initialize the App Client
+    const client = stitch.Stitch.initializeDefaultAppClient("mushroom_identifier-fgnig");
+    // Get a MongoDB Service Client
+    const mongodb = client.getServiceClient(
+      stitch.RemoteMongoClient.factory,
+      "mongodb-atlas"
+    );
+    // Get a reference to the blog database
+    const db = mongodb.db("mushrooms");
+
+    function displayComments() {
+      db.collection("description")
+        .find({}, {limit: 1000})
+        .asArray()
+        .then(docs => docs.map(doc => `<div>${doc.color} ${doc.gills}</div>`))
+        .then(comments => document.getElementById("comments").innerHTML = comments)
+    }
+
+    function displayCommentsOnLoad() {
+      client.auth
+        .loginWithCredential(new stitch.AnonymousCredential())
+        .then(displayComments)
+        .catch(console.error);
+    }
+
+    function addComment() {
+      const newComment = document.getElementById("new_comment");
+      const newComment2 = document.getElementById("new_comment2");
+      console.log("add comment", client.auth.user.id)
+      db.collection("description")
+        .insertOne({ owner_id : client.auth.user.id, color: newComment.value, gills: newComment2.value})
+        .then(displayComments);
+      newComment.value = "";
+      newComment2.value = "";
+    }
+
+
+/*<div class="form-group">
+ <label for="comment">Color of mushroom:</label>
+ <textarea class="form-control" rows="5" id="new_comment"></textarea>
+  <label for="comment">Did it have gills:</label>
+ <textarea class="form-control" rows="5" id="new_comment2"></textarea>
+ <input type="submit" onClick="addComment();">
+</div>*/
+
+
+</script>
+  </head>
+  <body onload="displayCommentsOnLoad()">
+    <h3>Identify ur mushroom</h3>
+    <div id="content">
+      Describe ur shroomie below
+    </div>
+    <hr>
+    <div id="comments"></div>
+    <div class="form-group">
+      <hr>
+      Color of mushroom:
+      <input id="new_comment">
+      <hr>
+      Did it have gills?
+      <input id="new_comment2">
+      <input type="submit" onClick="addComment()">
+    </div>
+  </body>
+</html>
